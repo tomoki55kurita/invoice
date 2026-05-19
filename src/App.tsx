@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { buildBody } from './lib/buildBody'
-import { getDefaultDueDate } from './lib/defaultDueDate'
+import {
+  adjustDueDateFromWeekend,
+  getDefaultDueDate,
+} from './lib/defaultDueDate'
 import { formatDueDate } from './lib/formatDueDate'
 import { defaultEmailTemplate } from './templates/default'
 import {
@@ -167,7 +170,9 @@ function App() {
                     type="date"
                     className="variable__control"
                     value={dueDate}
-                    onChange={(e) => setDueDate(e.target.value)}
+                    onChange={(e) =>
+                      setDueDate(adjustDueDateFromWeekend(e.target.value))
+                    }
                   />
                   <span className="variable__hint">{formatDueDate(dueDate)}</span>
                 </label>
