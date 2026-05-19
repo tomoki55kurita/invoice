@@ -11,8 +11,16 @@ export const recipientOptions: RecipientOption[] = [
     label: '株式会社ATOMS / ご担当者 様',
     value: '株式会社ATOMS\nご担当者 様',
   },
-  { id: 'five', label: 'Five 様', value: 'Five 様' },
-  { id: 'genuine', label: 'Genuine 様', value: 'Genuine 様' },
+  {
+    id: 'five',
+    label: 'FIVE / 吉川様',
+    value: 'FIVE\n吉川様',
+  },
+  {
+    id: 'genuine',
+    label: 'Genuine / 三浦様',
+    value: 'Genuine\n三浦様',
+  },
   {
     id: 'teppen',
     label: 'Teppen / 橋之口 様',
