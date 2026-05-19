@@ -25,4 +25,6 @@ export const recipientOptions: RecipientOption[] = [
   },
 ]
 
-export const defaultRecipientId = recipientOptions[0].id
+export const emptyRecipientId = ''
+
+export const defaultRecipientId = emptyRecipientId

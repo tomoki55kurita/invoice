@@ -15,16 +15,23 @@ function CopyButton({
   label,
   status,
   onCopy,
+  disabled = false,
 }: {
   label: string
   status: CopyStatus
   onCopy: () => void
+  disabled?: boolean
 }) {
   const buttonLabel =
     status === 'copied' ? 'コピーしました' : status === 'error' ? 'コピーに失敗' : label
 
   return (
-    <button type="button" className="btn btn--ghost btn--sm" onClick={onCopy}>
+    <button
+      type="button"
+      className="btn btn--ghost btn--sm"
+      onClick={onCopy}
+      disabled={disabled}
+    >
       {buttonLabel}
     </button>
   )
@@ -37,10 +44,10 @@ function App() {
   const [subjectCopyStatus, setSubjectCopyStatus] = useState<CopyStatus>('idle')
   const [bodyCopyStatus, setBodyCopyStatus] = useState<CopyStatus>('idle')
 
+  const hasRecipient = recipientId !== ''
+
   const recipient = useMemo(
-    () =>
-      recipientOptions.find((o) => o.id === recipientId)?.value ??
-      recipientOptions[0].value,
+    () => recipientOptions.find((o) => o.id === recipientId)?.value ?? '',
     [recipientId],
   )
 
@@ -109,6 +116,7 @@ function App() {
                   label="件名をコピー"
                   status={subjectCopyStatus}
                   onCopy={handleCopySubject}
+                  disabled={!hasRecipient}
                 />
               </div>
               <p className="preview-block__content">
@@ -122,6 +130,7 @@ function App() {
                   label="本文をコピー"
                   status={bodyCopyStatus}
                   onCopy={handleCopyBody}
+                  disabled={!hasRecipient}
                 />
               </div>
               <pre className="preview-block__content preview-block__content--mono">
@@ -144,6 +153,7 @@ function App() {
                     value={recipientId}
                     onChange={(e) => setRecipientId(e.target.value)}
                   >
+                    <option value="">選択してください</option>
                     {recipientOptions.map((option) => (
                       <option key={option.id} value={option.id}>
                         {option.label}
