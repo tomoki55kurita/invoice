@@ -1,121 +1,194 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { buildBody } from './lib/buildBody'
+import { getDefaultDueDate } from './lib/defaultDueDate'
+import { formatDueDate } from './lib/formatDueDate'
+import { defaultEmailTemplate } from './templates/default'
+import {
+  defaultRecipientId,
+  recipientOptions,
+} from './templates/recipients'
 import './App.css'
 
-function App() {
-  const [count, setCount] = useState(0)
+type CopyStatus = 'idle' | 'copied' | 'error'
+
+function CopyButton({
+  label,
+  status,
+  onCopy,
+}: {
+  label: string
+  status: CopyStatus
+  onCopy: () => void
+}) {
+  const buttonLabel =
+    status === 'copied' ? 'コピーしました' : status === 'error' ? 'コピーに失敗' : label
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <button type="button" className="btn btn--ghost btn--sm" onClick={onCopy}>
+      {buttonLabel}
+    </button>
+  )
+}
 
-      <div className="ticks"></div>
+function App() {
+  const [subject, setSubject] = useState(defaultEmailTemplate.subject)
+  const [recipientId, setRecipientId] = useState(defaultRecipientId)
+  const [dueDate, setDueDate] = useState(getDefaultDueDate)
+  const [subjectCopyStatus, setSubjectCopyStatus] = useState<CopyStatus>('idle')
+  const [bodyCopyStatus, setBodyCopyStatus] = useState<CopyStatus>('idle')
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+  const recipient = useMemo(
+    () =>
+      recipientOptions.find((o) => o.id === recipientId)?.value ??
+      recipientOptions[0].value,
+    [recipientId],
+  )
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+  const computedBody = useMemo(
+    () => buildBody(defaultEmailTemplate.bodyTemplate, recipient, dueDate),
+    [recipient, dueDate],
+  )
+
+  const [body, setBody] = useState(computedBody)
+
+  useEffect(() => {
+    setBody(computedBody)
+  }, [computedBody])
+
+  const copyWithFeedback = useCallback(
+    (text: string, setStatus: (status: CopyStatus) => void) => {
+      navigator.clipboard
+        .writeText(text)
+        .then(() => setStatus('copied'))
+        .catch(() => setStatus('error'))
+        .finally(() => {
+          window.setTimeout(() => setStatus('idle'), 2000)
+        })
+    },
+    [],
+  )
+
+  const handleCopySubject = useCallback(() => {
+    copyWithFeedback(subject, setSubjectCopyStatus)
+  }, [copyWithFeedback, subject])
+
+  const handleCopyBody = useCallback(() => {
+    copyWithFeedback(body, setBodyCopyStatus)
+  }, [copyWithFeedback, body])
+
+  const handleReset = useCallback(() => {
+    setSubject(defaultEmailTemplate.subject)
+    setRecipientId(defaultRecipientId)
+    setDueDate(getDefaultDueDate())
+    setSubjectCopyStatus('idle')
+    setBodyCopyStatus('idle')
+  }, [])
+
+  return (
+    <div className="app">
+      <header className="app-header">
+        <div className="app-header__title">
+          <h1>メール下書き</h1>
+          <p>請求書送付時の文面を編集し、左でプレビューできます</p>
+        </div>
+        <div className="app-header__actions">
+          <button type="button" className="btn btn--ghost" onClick={handleReset}>
+            テンプレートに戻す
+          </button>
+        </div>
+      </header>
+
+      <main className="workspace">
+        <section className="panel panel--preview" aria-label="プレビュー">
+          <div className="panel__label">プレビュー</div>
+          <div className="preview">
+            <section className="preview-block preview-block--subject">
+              <div className="preview-block__header">
+                <span className="preview-block__label">件名</span>
+                <CopyButton
+                  label="件名をコピー"
+                  status={subjectCopyStatus}
+                  onCopy={handleCopySubject}
+                />
+              </div>
+              <p className="preview-block__content">
+                {subject || '（件名がありません）'}
+              </p>
+            </section>
+            <section className="preview-block preview-block--body">
+              <div className="preview-block__header">
+                <span className="preview-block__label">本文</span>
+                <CopyButton
+                  label="本文をコピー"
+                  status={bodyCopyStatus}
+                  onCopy={handleCopyBody}
+                />
+              </div>
+              <pre className="preview-block__content preview-block__content--mono">
+                {body || '（本文がありません）'}
+              </pre>
+            </section>
+          </div>
+        </section>
+
+        <section className="panel panel--editor" aria-label="編集">
+          <div className="panel__label">編集</div>
+          <div className="editor-fields">
+            <div className="field field--variables">
+              <span className="field__label">差し込み</span>
+              <div className="variables">
+                <label className="variable">
+                  <span className="variable__name">宛名</span>
+                  <select
+                    className="variable__control"
+                    value={recipientId}
+                    onChange={(e) => setRecipientId(e.target.value)}
+                  >
+                    {recipientOptions.map((option) => (
+                      <option key={option.id} value={option.id}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="variable">
+                  <span className="variable__name">支払期限</span>
+                  <input
+                    type="date"
+                    className="variable__control"
+                    value={dueDate}
+                    onChange={(e) => setDueDate(e.target.value)}
+                  />
+                  <span className="variable__hint">{formatDueDate(dueDate)}</span>
+                </label>
+              </div>
+            </div>
+
+            <div className="field field--subject">
+              <span className="field__label">件名</span>
+              <input
+                type="text"
+                className="subject-input"
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                spellCheck={false}
+                aria-label="件名"
+              />
+            </div>
+            <div className="field field--body">
+              <span className="field__label">本文</span>
+              <textarea
+                className="editor"
+                value={body}
+                onChange={(e) => setBody(e.target.value)}
+                spellCheck={false}
+                aria-label="本文"
+              />
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
   )
 }
 
